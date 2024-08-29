@@ -5,5 +5,12 @@
     </head>
     <body>
         Hello from HTML {{message}}
+        <form action="/guess" method="POST">
+            <input type="text" name="prediction" placeholder="Enter Your Guess">
+            <button type="submit">Submit</button>
+        </form>
+        <form action="/play" method="POST">
+            <button type="submit">Play</button>
+        </form>
     </body>
 </html>
