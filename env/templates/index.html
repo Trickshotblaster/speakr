@@ -4,17 +4,26 @@
         <link rel="stylesheet" href="static/styles/style.css">
     </head>
     <body>
-        Hello from HTML {{message}}
-        <form id="guess">
-            <input type="text" id="prediction" placeholder="Enter Your Guess">
-            <button type="submit">Submit</button>
-        </form>
-        <form id="play">
-            <button type="submit">Play</button>
-        </form>
-        <form id="next">
-            <button type="submit">Next</button>
-        </form>
+        <div class="container">
+            <h1 id="title">Speakr</h1>
+            <h2>Play the audio and guess what was said!</h2>
+            <form id="guess">
+                <input type="text" id="prediction" placeholder="Enter Your Guess">
+                <button type="submit">Submit</button>
+            </form>
+            
+            <form style ='display:inline-block;' id="play">
+                <button type="submit">Play</button>
+            </form>
+            <form style ='display:inline-block;' id="next">
+                <button type="submit">Next</button>
+            </form>
+        </div>
+        
+        
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
+    
         <script src="https://code.jquery.com/jquery-3.5.1.js"
           integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
           crossorigin="anonymous"></script>
@@ -56,6 +65,11 @@
                 },
                 
               })
+            });
+            const socket = io();
+            socket.on("server", function(msg) {
+                alert(msg);
+                document.getElementById("prediction").value = ""
             });
           </script>
     </body>

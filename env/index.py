@@ -2,11 +2,13 @@
 # OR
 # python3 index.py
 from flask import Flask, render_template, request
+from flask_socketio import SocketIO, emit
 import pytubefix
 from pytubefix import YouTube
 import xmltodict
 from pydub import AudioSegment
 from pydub.playback import play
+from unidecode import unidecode
 
 # sudo apt-get install gir1.2-gst-plugins-base-1.0 gir1.2-polkit-1.0 gpicview gstreamer1.0-alsa gstreamer1.0-libav gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-x
 
@@ -25,6 +27,7 @@ from pydub.playback import play
 # print(examples[:10])
 
 app = Flask(__name__, template_folder='templates')
+socketio = SocketIO(app,debug=True, cors_allowed_origins='*')
 
 def filter_example(example):
     dur = int(float(example['@dur']) * 1000)
@@ -62,6 +65,11 @@ def get_caption_sound_pairs(video_url, lang='a.es'):
             sounds.append(sound)
     return captions, sounds
 
+def jaccard_similarity(x,y):
+  """ returns the jaccard similarity between two lists """
+  intersection_cardinality = len(set.intersection(*[set(x), set(y)]))
+  union_cardinality = len(set.union(*[set(x), set(y)]))
+  return intersection_cardinality/float(union_cardinality)
 
 captions, sounds = get_caption_sound_pairs('https://www.youtube.com/watch?v=vq-FE8bEtcE')
 current_index = 0
@@ -80,7 +88,15 @@ def hello_world():
         play(sounds[current_index])
     if guess:
         print("you guessed:", guess)
-    return render_template('index.html', message=captions[current_index])
+        print("correct answer:", unidecode(captions[current_index]).lower())
+        similarity = jaccard_similarity(unidecode(guess).lower(), unidecode(captions[current_index]).lower())
+        print("similarity:", similarity)
+        correct = similarity > 0.8
+        msg = "---Correct---" if correct else "---Incorrect---"
+        print(msg)
+        socketio.emit('server', msg)
+        current_index += 1
+    return render_template('index.html')
 
 if __name__ == '__main__':
    app.run()
