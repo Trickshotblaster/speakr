@@ -1,7 +1,7 @@
 # flask --app index run
 # OR
 # python3 index.py
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import pytubefix
 from pytubefix import YouTube
 import xmltodict
@@ -26,6 +26,16 @@ from pydub.playback import play
 
 app = Flask(__name__, template_folder='templates')
 
+def filter_example(example):
+    dur = int(float(example['@dur']) * 1000)
+    if dur < 1000:
+        return False
+    if example['#text'].find("[Música]") != -1:
+        return False
+    if example['#text'].find("[___]") != -1:
+        return False
+    return True
+
 def get_caption_sound_pairs(video_url, lang='a.es'):
     yt = YouTube(video_url)
     caption = yt.captions[lang]
@@ -35,12 +45,16 @@ def get_caption_sound_pairs(video_url, lang='a.es'):
     video_sound = AudioSegment.from_file("audio/tmp")
 
     captions, sounds = [], []
-    for example in examples:
-        if example['#text'].find("[Música]") != -1:
+    for index, example in enumerate(examples):
+        if filter_example(example):
             start = int(float(example['@start']) * 1000)
             dur = int(float(example['@dur']) * 1000)
-            end = start + dur
-
+            if index < len(examples) - 1:
+                end = int(float(examples[index+1]['@start']) * 1000) + 100 # add a little extra time
+            else:
+                end = start + dur
+            if index > 0 and int(float(examples[index-1]['@dur']) * 1000) > 200:
+                start -= 200
             capt = example['#text']
             sound = video_sound[start:end]
             
@@ -51,16 +65,22 @@ def get_caption_sound_pairs(video_url, lang='a.es'):
 
 captions, sounds = get_caption_sound_pairs('https://www.youtube.com/watch?v=vq-FE8bEtcE')
 current_index = 0
-print(captions[6])
-play(sounds[6])
 
-@app.route("/")
+
+@app.route("/", methods=['GET', 'POST'])
 def hello_world():
-    return render_template('index.html', message=examples[0]["#text"])
-
-@app.route("/play", methods=['POST'])
-def play_audio():
-    play(sounds[current_index])
+    global current_index
+    play_sound = request.form.get("play")
+    go_next = request.form.get("go_next")
+    guess = request.form.get("guess")
+    if play_sound:
+        play(sounds[current_index])
+    if go_next:
+        current_index += 1
+        play(sounds[current_index])
+    if guess:
+        print("you guessed:", guess)
+    return render_template('index.html', message=captions[current_index])
 
 if __name__ == '__main__':
    app.run()

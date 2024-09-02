@@ -5,12 +5,58 @@
     </head>
     <body>
         Hello from HTML {{message}}
-        <form action="/guess" method="POST">
-            <input type="text" name="prediction" placeholder="Enter Your Guess">
+        <form id="guess">
+            <input type="text" id="prediction" placeholder="Enter Your Guess">
             <button type="submit">Submit</button>
         </form>
-        <form action="/play" method="POST">
+        <form id="play">
             <button type="submit">Play</button>
         </form>
+        <form id="next">
+            <button type="submit">Next</button>
+        </form>
+        <script src="https://code.jquery.com/jquery-3.5.1.js"
+          integrity="sha256-QWo7LDvxbWT2tbbQ97B53yJnYU3WhH/C8ycbRAkjPDc="
+          crossorigin="anonymous"></script>
+        <script type="text/javascript">
+            $(document).on('submit','#play',function(e)
+                           {
+              e.preventDefault();
+              $.ajax({
+                type:'POST',
+                url:'/',
+                data:{
+                  play:1
+                },
+                
+              })
+            });
+
+            $(document).on('submit','#next',function(e)
+                           {
+              e.preventDefault();
+              $.ajax({
+                type:'POST',
+                url:'/',
+                data:{
+                  go_next:1
+                },
+                
+              })
+            });
+
+            $(document).on('submit','#guess',function(e)
+                           {
+              e.preventDefault();
+              $.ajax({
+                type:'POST',
+                url:'/',
+                data:{
+                  guess:$("#prediction").val()
+                },
+                
+              })
+            });
+          </script>
     </body>
 </html>
