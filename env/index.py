@@ -9,6 +9,10 @@ import xmltodict
 from pydub import AudioSegment
 from pydub.playback import play
 from unidecode import unidecode
+import os
+import random
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 # sudo apt-get install gir1.2-gst-plugins-base-1.0 gir1.2-polkit-1.0 gpicview gstreamer1.0-alsa gstreamer1.0-libav gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-x
 
@@ -26,8 +30,60 @@ from unidecode import unidecode
 # examples = captions_dict['transcript']['text']
 # print(examples[:10])
 
+
 app = Flask(__name__, template_folder='templates')
 socketio = SocketIO(app,debug=True, cors_allowed_origins='*')
+
+
+
+def get_random_youtube_video(api_key, language='es', max_results=50):
+    youtube = build('youtube', 'v3', developerKey=api_key)
+
+    try:
+        # Search for videos with captions in the specified language
+        search_response = youtube.search().list(
+            q='',
+            type='video',
+            videoCaption='closedCaption',
+            relevanceLanguage=language,
+            part='id',
+            maxResults=max_results
+        ).execute()
+
+        # Get video IDs from the search results
+        video_ids = [item['id']['videoId'] for item in search_response.get('items', [])]
+
+        if not video_ids:
+            return None
+
+        # Select a random video ID
+        random_video_id = random.choice(video_ids)
+
+        # Get video details to confirm caption language
+        video_response = youtube.videos().list(
+            part='contentDetails',
+            id=random_video_id
+        ).execute()
+
+        caption_tracks = video_response['items'][0]['contentDetails'].get('caption', 'false')
+
+        if caption_tracks == 'true':
+            return f'https://www.youtube.com/watch?v={random_video_id}'
+        else:
+            # If no captions, try again (recursively)
+            return get_random_youtube_video(api_key, language, max_results)
+
+    except HttpError as e:
+        print(f'An HTTP error {e.resp.status} occurred: {e.content}')
+        return None
+
+
+api_key = os.environ.get("YOUTUBE_API_KEY")
+assert api_key is not None, "You must add your youtube api key as an environment variable (check README)"
+
+
+
+
 
 def filter_example(example):
     dur = int(float(example['@dur']) * 1000)
@@ -41,7 +97,7 @@ def filter_example(example):
 
 def get_caption_sound_pairs(video_url, lang='a.es'):
     yt = YouTube(video_url)
-    caption = yt.captions[lang]
+    caption = yt.captions[lang] if lang in yt.captions else yt.captions["a." + lang]
     captions_dict = xmltodict.parse(caption.xml_captions)
     examples = captions_dict['transcript']['text']
     yt.streams.filter(only_audio=True)[0].download(output_path="audio/", filename="tmp")
@@ -71,7 +127,10 @@ def jaccard_similarity(x,y):
   union_cardinality = len(set.union(*[set(x), set(y)]))
   return intersection_cardinality/float(union_cardinality)
 
-captions, sounds = get_caption_sound_pairs('https://www.youtube.com/watch?v=vq-FE8bEtcE')
+lang = 'es'
+random_video_url = get_random_youtube_video(api_key, language=lang)
+captions, sounds = get_caption_sound_pairs(random_video_url, lang=lang)
+
 current_index = 0
 
 
@@ -94,7 +153,7 @@ def hello_world():
         correct = similarity > 0.8
         msg = "---Correct---" if correct else "---Incorrect---"
         print(msg)
-        socketio.emit('server', msg)
+        socketio.emit('server', msg + f"\nAnswer: {captions[current_index]}")
         current_index += 1
     return render_template('index.html')
 
