@@ -87,6 +87,12 @@
                 alert(msg);
                 document.getElementById("prediction").value = ""
             });
+            socket.on('play_sound', function(data) {
+                console.log("hello world")
+                var audio = new Audio(data.url, id="my_audio", oncanplaythrough="this.play()");
+                console.log(audio)
+                
+            });
           </script>
     </body>
 </html>

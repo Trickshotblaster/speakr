@@ -1,7 +1,7 @@
 # flask --app index run
 # OR
 # python3 index.py
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 from flask_socketio import SocketIO, emit
 import pytubefix
 from pytubefix import YouTube
@@ -15,21 +15,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # sudo apt-get install gir1.2-gst-plugins-base-1.0 gir1.2-polkit-1.0 gpicview gstreamer1.0-alsa gstreamer1.0-libav gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-x
-
-# yt = YouTube('https://www.youtube.com/watch?v=vq-FE8bEtcE')
-
-# caption = yt.captions['a.es']
-
-# streams = yt.streams.filter(only_audio=True)[:10]
-# print(streams[:10])
-# streams[0].download(output_path="audio/", filename="tmp")
-# sound = AudioSegment.from_file("audio/tmp")[10000:20000]
-# play(sound)
-# captions_dict = xmltodict.parse(caption.xml_captions)
-
-# examples = captions_dict['transcript']['text']
-# print(examples[:10])
-
 
 app = Flask(__name__, template_folder='templates')
 socketio = SocketIO(app,debug=True, cors_allowed_origins='*')
@@ -153,12 +138,21 @@ captions, sounds = zip(*c)
 
 current_index = 0
 
+def play_sound_client(sound):
+    with app.app_context():
+        sound.export("audio/client/tmp", format="mp4")
+        
+        audio_url = url_for('hello_world', filename='audio/client/tmp.mp4', _external=True)
+        socketio.emit('play_sound', {'url': audio_url})
+
+
 
 @app.route("/", methods=['GET', 'POST'])
 def hello_world():
     global current_index
     global captions
     global sounds
+    play_sound_client(sounds[0])
     if current_index >= len(captions):
         random_video_url = get_random_youtube_video(api_key, language=lang)
         captions, sounds = get_caption_sound_pairs(random_video_url, lang=lang)
@@ -173,6 +167,7 @@ def hello_world():
     skip_video = request.form.get("skip_video")
     if play_sound:
         play(sounds[current_index])
+        play_sound_client(sounds[current_index])
     if go_next:
         current_index += 1
         play(sounds[current_index])
