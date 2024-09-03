@@ -18,6 +18,9 @@
             <form style ='display:inline-block;' id="next">
                 <button type="submit">Next</button>
             </form>
+            <form style ='display:inline-block;' id="skip-video">
+                <button type="submit">Skip Video</button>
+            </form>
         </div>
         
         
@@ -49,6 +52,19 @@
                 url:'/',
                 data:{
                   go_next:1
+                },
+                
+              })
+            });
+
+            $(document).on('submit','#skip-video',function(e)
+                           {
+              e.preventDefault();
+              $.ajax({
+                type:'POST',
+                url:'/',
+                data:{
+                  skip_video:1
                 },
                 
               })
