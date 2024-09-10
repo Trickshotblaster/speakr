@@ -23,7 +23,7 @@
             </form>
         </div>
         
-        
+        <audio id="audioPlayer"></audio>
         
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
     
@@ -83,16 +83,32 @@
               })
             });
             const socket = io();
+            block = false;
+            cooldown = 0
+            function increase_cooldown() {
+              cooldown += 1
+              if (cooldown > 5) {
+                block = false;
+                cooldown = 0;
+              }
+            }
+            setInterval(increase_cooldown, 1000)
             socket.on("server", function(msg) {
-                alert(msg);
+              if (msg.msg) {
+                alert(msg.msg);
                 document.getElementById("prediction").value = ""
-            });
-            socket.on('play_sound', function(data) {
-                console.log("hello world")
-                var audio = new Audio(data.url, id="my_audio", oncanplaythrough="this.play()");
-                console.log(audio)
+              } else if (msg.url) {
+                if (!block) {
+                  console.log("hello world")
+                  var audioPlayer = document.getElementById('audioPlayer');
+                  audioPlayer.src = msg.url;
+                  audioPlayer.play();
+                  block = true;
+                }
                 
-            });
+              }
+                
+            }, []);
           </script>
     </body>
 </html>

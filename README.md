@@ -8,5 +8,10 @@ setup:
 4. ```cd env```
 5. Get an API key for the youtube-v3 api (random tutorial: https://blog.hubspot.com/website/how-to-get-youtube-api-key), then
 For linux: ```export YOUTUBE_API_KEY="your-api-key"```
+or
+```sudo nano ~/.bashrc```,
+add ```export YOUTUBE_API_KEY="your-api-key"``` at the end of the file,
+save and exit,
+```source ~/.bashrc```
 For windows: ```setx YOUTUBE_API_KEY "your-api-key"```
 6. ```python3 index.py```

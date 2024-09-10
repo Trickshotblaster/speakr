@@ -143,7 +143,7 @@ def play_sound_client(sound):
         sound.export("audio/client/tmp", format="mp4")
         
         audio_url = url_for('hello_world', filename='audio/client/tmp.mp4', _external=True)
-        socketio.emit('play_sound', {'url': audio_url})
+        socketio.emit('server', {'url': audio_url})
 
 
 
@@ -167,7 +167,7 @@ def hello_world():
     skip_video = request.form.get("skip_video")
     if play_sound:
         play(sounds[current_index])
-        play_sound_client(sounds[current_index])
+        #play_sound_client(sounds[current_index])
     if go_next:
         current_index += 1
         play(sounds[current_index])
@@ -179,7 +179,7 @@ def hello_world():
         correct = similarity > 0.8
         msg = "---Correct---" if correct else "---Incorrect---"
         print(msg)
-        socketio.emit('server', msg + f"\nAnswer: {captions[current_index]}")
+        socketio.emit('server', {"msg": msg + f"\nAnswer: {captions[current_index]}"})
         current_index += 1
     if skip_video:
         random_video_url = get_random_youtube_video(api_key, language=lang)
